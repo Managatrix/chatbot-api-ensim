@@ -254,10 +254,10 @@ public class Message implements BotApiObject {
 		return chat.isSuperGroupChat();
 	}
 	
-	@JsonIgnore
-	public Long getChatId() {
-		return chat.getId();
-	}
+	// @JsonIgnore
+	// public Long getChatId() {
+	// 	return chat.getId();
+	// }
 	
 	@JsonIgnore
 	public boolean hasText() {
