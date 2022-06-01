@@ -7,10 +7,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import fr.ensim.interop.introrest.model.joke.Joke;
+import fr.ensim.interop.introrest.model.openweather.OpenWeather;
 import fr.ensim.interop.introrest.model.telegram.ApiResponseTelegram;
 import fr.ensim.interop.introrest.model.telegram.ApiResponseUpdateTelegram;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -49,8 +52,11 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 					offset = response.getResult().get(0).getUpdateId();
 					System.out.println("New offset = " + ++offset);
 					System.out.println("messageText = " + messageText);
+
+					List<String> words = Arrays.asList(messageText.split("[ ]+"));
+
 					// Traiter message reçu
-					if (messageText.equalsIgnoreCase("joke")) {
+					if (words.get(0).equalsIgnoreCase("joke")) {
 						Joke jokeResponse = restTemplate.getForObject("http://127.0.0.1:9090/randomJoke",
 								Joke.class);
 						System.out.println(jokeResponse.getTitle());
@@ -72,11 +78,28 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 								.build().encode().toUri();
 						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
 					}
+
+					if (words.get(0).equalsIgnoreCase("meteo")) {
+						URI meteoURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/meteo")
+								.queryParam("cityName", words.get(1))
+								.build().encode().toUri();
+						OpenWeather openWeather = restTemplate.getForObject(meteoURL, OpenWeather.class);
+
+						URI messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/message")
+								.queryParam("chat_id", telegramBotId)
+								.queryParam("text",
+										openWeather.getWeather().get(0).getMain() + " : "
+												+ openWeather.getWeather().get(0).getDescription())
+								.build().encode().toUri();
+						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
+					}
 				}
 			}
 		};
 		Timer timer = new Timer("Timer");
-		long delay = 2000;
+		long delay = 500;
 		timer.schedule(task, 0, delay);
 	}
 }
