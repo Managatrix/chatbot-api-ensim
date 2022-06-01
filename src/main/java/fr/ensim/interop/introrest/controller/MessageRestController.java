@@ -51,11 +51,11 @@ public class MessageRestController {
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/getUpdates")
-    public ResponseEntity<ApiResponseTelegram> getUpdates() {
+    @GetMapping(value = "/getUpdates", params = { "offset" })
+    public ResponseEntity<ApiResponseTelegram> getUpdates(@RequestParam("offset") int offset) {
         URI targetUrl = UriComponentsBuilder.fromUriString(telegramApiUrl)
                 .path("/getUpdates")
-                .queryParam("", "")
+                .queryParam("offset", offset)
                 .build().encode().toUri();
         ApiResponseTelegram response = restTemplate.getForObject(targetUrl, ApiResponseTelegram.class);
         return ResponseEntity.ok().body(response);

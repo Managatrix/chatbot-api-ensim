@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import fr.ensim.interop.introrest.model.joke.Joke;
+import fr.ensim.interop.introrest.model.telegram.ApiResponseTelegram;
 import fr.ensim.interop.introrest.model.telegram.ApiResponseUpdateTelegram;
 
 import java.net.URI;
@@ -28,22 +30,17 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 
 		RestTemplate restTemplate = new RestTemplate();
 
-		// ResponseEntity<ApiResponseTelegram> responseTelegram = messageRestController
-		// .sendMessage(Long.parseLong(telegramBotId), "Hi");
-		// ResponseEntity<ApiResponseTelegram> responseTelegram = messageRestController
-		// .getUpdates();
-
 		TimerTask task = new TimerTask() {
 			int offset = -1;
 			int updateNum = 0;
 
 			public void run() {
 				// Operation de pooling pour capter les evenements Telegram
-				URI targetUrl = UriComponentsBuilder.fromUriString(telegramApiUrl)
+				URI getUpdatesURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
 						.path("/getUpdates")
 						.queryParam("offset", offset)
 						.build().encode().toUri();
-				ApiResponseUpdateTelegram response = restTemplate.getForObject(targetUrl,
+				ApiResponseUpdateTelegram response = restTemplate.getForObject(getUpdatesURL,
 						ApiResponseUpdateTelegram.class);
 				System.out.println("----------- Get Updates num." + updateNum++);
 
@@ -53,6 +50,28 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 					System.out.println("New offset = " + ++offset);
 					System.out.println("messageText = " + messageText);
 					// Traiter message reçu
+					if (messageText.equalsIgnoreCase("joke")) {
+						Joke jokeResponse = restTemplate.getForObject("http://127.0.0.1:9090/randomJoke",
+								Joke.class);
+						System.out.println(jokeResponse.getTitle());
+						System.out.println(jokeResponse.getAnswer());
+
+						// Envoi de la question
+						URI messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/message")
+								.queryParam("chat_id", telegramBotId)
+								.queryParam("text", jokeResponse.getTitle())
+								.build().encode().toUri();
+						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
+
+						// Envoi de la réponse
+						messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/message")
+								.queryParam("chat_id", telegramBotId)
+								.queryParam("text", jokeResponse.getAnswer())
+								.build().encode().toUri();
+						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
+					}
 				}
 			}
 		};

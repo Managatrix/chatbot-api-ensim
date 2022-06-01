@@ -22,6 +22,9 @@ public class Joke {
         this.rating = rating;
     }
 
+    public Joke() {
+    }
+
     public int getId() {
         return id;
     }
