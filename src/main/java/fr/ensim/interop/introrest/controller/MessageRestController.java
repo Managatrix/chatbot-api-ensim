@@ -50,4 +50,14 @@ public class MessageRestController {
         ApiResponseTelegram<Message> response = restTemplate.getForObject(targetUrl, ApiResponseTelegram.class);
         return ResponseEntity.ok().body(response);
     }
+
+    @GetMapping("/getUpdates")
+    public ResponseEntity<ApiResponseTelegram> getUpdates() {
+        URI targetUrl = UriComponentsBuilder.fromUriString(telegramApiUrl)
+                .path("/getUpdates")
+                .queryParam("", "")
+                .build().encode().toUri();
+        ApiResponseTelegram response = restTemplate.getForObject(targetUrl, ApiResponseTelegram.class);
+        return ResponseEntity.ok().body(response);
+    }
 }
