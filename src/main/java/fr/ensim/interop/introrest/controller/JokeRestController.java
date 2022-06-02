@@ -4,8 +4,13 @@ import fr.ensim.interop.introrest.model.joke.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,14 +44,13 @@ public class JokeRestController {
                 "Because they were completely hooked on the hooks proposal.", 3));
     }
 
-    // private Map<Integer, Joke> jokeDatabase = new ConcurrentHashMap<>();
-    // private AtomicInteger fakeSequence = new AtomicInteger(0);
     Random generator = new Random();
     Object[] values = jokes.values().toArray();
     Joke randomJoke;
 
     @GetMapping(value = "/randomJoke", params = { "isGoodJokeRequested" })
     public ResponseEntity<Joke> randomJoke(@RequestParam("isGoodJokeRequested") boolean isGoodJokeRequested) {
+        values = jokes.values().toArray();
         randomJoke = (Joke) values[generator.nextInt(values.length)];
         if (isGoodJokeRequested) {
             while (randomJoke.getRating() < 5) {
@@ -58,5 +62,30 @@ public class JokeRestController {
             }
         }
         return ResponseEntity.ok(randomJoke);
+    }
+
+    // Pas encore testé
+    @PostMapping("/addJoke")
+    public ResponseEntity<Joke> creerEquipe(@RequestBody Joke jokeToAdd) {
+        // question et réponse obligatoires, non vides, non blancs
+        if (!StringUtils.hasText(jokeToAdd.getTitle()) || !StringUtils.hasText(jokeToAdd.getAnswer())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // // Si la blague existe déjà, le endpoint devra retourner le code http adapté
+        // if (jokes.keySet().stream().anyMatch(id -> id == jokeToAdd.getId())) {
+        // return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        // }
+
+        if (jokeToAdd.getId() == 0 || jokes.keySet().stream().anyMatch(id -> id == jokeToAdd.getId())) {
+            jokeToAdd.setId(jokes.keySet().size() + 1);
+        }
+        jokeToAdd.setTitle(jokeToAdd.getTitle());
+        jokeToAdd.setAnswer(jokeToAdd.getAnswer());
+        jokes.put(jokeToAdd.getId(), jokeToAdd);
+
+        System.out.println("creer blague -> " + jokeToAdd);
+
+        return ResponseEntity.ok().body(jokeToAdd);
     }
 }

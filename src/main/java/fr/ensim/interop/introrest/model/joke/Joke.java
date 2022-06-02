@@ -7,8 +7,6 @@ public class Joke {
     private int id;
     @JsonProperty("title")
     private String title;
-    @JsonProperty("content")
-    private String content;
     @JsonProperty("answer")
     private String answer;
     @JsonProperty("rating")
@@ -38,14 +36,6 @@ public class Joke {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
     }
 
     public String getAnswer() {

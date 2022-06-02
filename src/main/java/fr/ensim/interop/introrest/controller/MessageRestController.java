@@ -20,14 +20,15 @@ public class MessageRestController {
 
     @Value("${telegram.api.url}")
     private String telegramApiUrl;
+    @Value("${telegram.bot.id}")
+    private String telegramBotId;
 
     RestTemplate restTemplate = new RestTemplate();
 
     // Opérations sur la ressource Message
 
-    @GetMapping(value = "/message", params = { "chat_id", "text" })
+    @GetMapping(value = "/message", params = { "text" })
     public ResponseEntity<ApiResponseTelegram> sendMessage(
-            @RequestParam("chat_id") Long chat_id,
             @RequestParam("text") String text) {
 
         // text obligatoire, non vide, non blanc
@@ -37,11 +38,11 @@ public class MessageRestController {
 
         Message messageToSend = new Message();
         messageToSend.setText(text);
-        messageToSend.setChat(new Chat(chat_id, "private"));
+        messageToSend.setChat(new Chat(Long.parseLong(telegramBotId), "private"));
 
         URI targetUrl = UriComponentsBuilder.fromUriString(telegramApiUrl) // Build the base link
                 .path("/sendMessage") // Add path
-                .queryParam("chat_id", chat_id) // Add one or more query params
+                .queryParam("chat_id", telegramBotId) // Add one or more query params
                 .queryParam("text", text)
                 .build() // Build the URL
                 .encode() // Encode any URI items that need to be encoded
