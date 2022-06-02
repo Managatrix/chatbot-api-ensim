@@ -124,7 +124,7 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 							meteoResponseMessage = "Requested city was not found :/";
 						} else {
 							meteoResponseMessage = "Mitiyo for " + cityResponse.getName() + ", "
-									+ openWeather.getSys().getCountry() + "\n-Today: "
+									+ openWeather.getSys().getCountry() + "\n\t- Today: "
 									+ openWeather.getWeather().get(0).getMain() + " ("
 									+ openWeather.getWeather().get(0).getDescription() + ") | Temperature : "
 									+ (int) (openWeather.getMain().getTemp() - 273.15) + " C";
@@ -135,6 +135,16 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 								.path("/message")
 								.queryParam("chat_id", telegramBotId)
 								.queryParam("text", meteoResponseMessage)
+								.build().encode().toUri();
+						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
+					}
+
+					if (words.get(0).equalsIgnoreCase("help")) {
+						// sendMessage(text) request
+						URI messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/message")
+								.queryParam("chat_id", telegramBotId)
+								.queryParam("text", "Available commands :\n\t- (bad or good) joke\n\t- meteo [city]\n")
 								.build().encode().toUri();
 						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
 					}
