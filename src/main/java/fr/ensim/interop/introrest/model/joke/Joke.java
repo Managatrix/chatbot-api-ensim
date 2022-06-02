@@ -14,10 +14,9 @@ public class Joke {
     @JsonProperty("rating")
     private int rating;
 
-    public Joke(int id, String title, String content, String answer, int rating) {
+    public Joke(int id, String title, String answer, int rating) {
         this.id = id;
         this.title = title;
-        this.content = content;
         this.answer = answer;
         this.rating = rating;
     }

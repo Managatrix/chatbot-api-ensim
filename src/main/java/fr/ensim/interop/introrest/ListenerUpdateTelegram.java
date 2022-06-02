@@ -7,6 +7,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import fr.ensim.interop.introrest.model.joke.Joke;
+import fr.ensim.interop.introrest.model.openweather.City;
 import fr.ensim.interop.introrest.model.openweather.OpenWeather;
 import fr.ensim.interop.introrest.model.telegram.ApiResponseTelegram;
 import fr.ensim.interop.introrest.model.telegram.ApiResponseUpdateTelegram;
@@ -14,6 +15,7 @@ import fr.ensim.interop.introrest.model.telegram.ApiResponseUpdateTelegram;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -55,18 +57,33 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 
 					List<String> words = Arrays.asList(messageText.split("[ ]+"));
 
-					// Traiter message reçu
-					if (words.get(0).equalsIgnoreCase("joke")) {
-						Joke jokeResponse = restTemplate.getForObject("http://127.0.0.1:9090/randomJoke",
-								Joke.class);
-						System.out.println(jokeResponse.getTitle());
-						System.out.println(jokeResponse.getAnswer());
+					if ((words.size() >= 2 && words.get(1).equalsIgnoreCase("joke"))
+							|| words.get(0).equalsIgnoreCase("joke")) {
+						Boolean isGoodJokeRequested = true;
+						if (words.get(0).equalsIgnoreCase("bad")) {
+							// Demande de blague nulle
+							isGoodJokeRequested = false;
+
+						}
+						// if (words.get(0).equalsIgnoreCase("good") ||
+						// words.get(0).equalsIgnoreCase("funny")
+						// || words.get(0).equalsIgnoreCase("joke")) {
+						// // Demande de bonne blague
+						// isGoodJokeRequested = true;
+						// }
+
+						URI jokeURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/randomJoke")
+								.queryParam("isGoodJokeRequested", isGoodJokeRequested)
+								.build().encode().toUri();
+
+						Joke jokeResponse = restTemplate.getForObject(jokeURL, Joke.class);
 
 						// Envoi de la question
 						URI messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
 								.path("/message")
 								.queryParam("chat_id", telegramBotId)
-								.queryParam("text", jokeResponse.getTitle())
+								.queryParam("text", "(" + jokeResponse.getRating() + ") - " + jokeResponse.getTitle())
 								.build().encode().toUri();
 						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
 
@@ -77,21 +94,47 @@ public class ListenerUpdateTelegram implements CommandLineRunner {
 								.queryParam("text", jokeResponse.getAnswer())
 								.build().encode().toUri();
 						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
+
 					}
 
 					if (words.get(0).equalsIgnoreCase("meteo")) {
+						StringJoiner joiner = new StringJoiner(" ");
+						for (int i = 1; i < words.size(); i++) {
+							joiner.add(words.get(i));
+						}
+						String meteoRequestBody = joiner.toString();
+
+						// meteo(city) request
 						URI meteoURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
 								.path("/meteo")
-								.queryParam("cityName", words.get(1))
+								.queryParam("cityName", meteoRequestBody)
 								.build().encode().toUri();
 						OpenWeather openWeather = restTemplate.getForObject(meteoURL, OpenWeather.class);
 
+						// searchCity(city) request
+						URI cityURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
+								.path("/searchCity")
+								.queryParam("cityName", meteoRequestBody)
+								.build().encode().toUri();
+						City cityResponse = restTemplate.getForObject(cityURL, City.class);
+
+						String meteoResponseMessage;
+						if (openWeather == null || cityResponse == null) {
+							// If not cities were found
+							meteoResponseMessage = "Requested city was not found :/";
+						} else {
+							meteoResponseMessage = "Mitiyo for " + cityResponse.getName() + ", "
+									+ openWeather.getSys().getCountry() + "\n-Today: "
+									+ openWeather.getWeather().get(0).getMain() + " ("
+									+ openWeather.getWeather().get(0).getDescription() + ") | Temperature : "
+									+ (int) (openWeather.getMain().getTemp() - 273.15) + " C";
+						}
+
+						// sendMessage(text) request
 						URI messageURL = UriComponentsBuilder.fromUriString("http://127.0.0.1:9090")
 								.path("/message")
 								.queryParam("chat_id", telegramBotId)
-								.queryParam("text",
-										openWeather.getWeather().get(0).getMain() + " : "
-												+ openWeather.getWeather().get(0).getDescription())
+								.queryParam("text", meteoResponseMessage)
 								.build().encode().toUri();
 						restTemplate.getForObject(messageURL, ApiResponseTelegram.class);
 					}
