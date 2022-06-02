@@ -14,7 +14,9 @@ import org.springframework.web.client.RestTemplate;
 public class OpenWeatherRestController {
 
 	@Value("${open.weather.api.token}")
-	private String openWeatherApiUrl;
+	private String openWeatherApiToken;
+	// @Value("${open.weather.api.url}")
+	// private String openWeatherApiUrl;
 
 	@GetMapping("/meteo")
 	public ResponseEntity<OpenWeather> meteoFromCity(
@@ -23,7 +25,7 @@ public class OpenWeatherRestController {
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<City[]> responseEntity = restTemplate.getForEntity(
 				"http://api.openweathermap.org/geo/1.0/direct?q={cityName}&limit=3"
-						+ "&appid=" + openWeatherApiUrl,
+						+ "&appid=" + openWeatherApiToken,
 				City[].class, cityName);
 		City[] cities = responseEntity.getBody();
 
@@ -34,8 +36,8 @@ public class OpenWeatherRestController {
 			// System.out.println(city.getName());
 
 			OpenWeather openWeather = restTemplate.getForObject(
-					openWeatherApiUrl + "weather?lat={lat}" + "&lon={lon}&appid="
-							+ openWeatherApiUrl,
+					"https://api.openweathermap.org/data/2.5/weather?lat={lat}" + "&lon={lon}&appid="
+							+ openWeatherApiToken,
 					OpenWeather.class, city.getLat(), city.getLon());
 
 			return ResponseEntity.ok().body(openWeather);
@@ -48,7 +50,7 @@ public class OpenWeatherRestController {
 
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<City[]> responseEntity = restTemplate.getForEntity(
-				"http://api.openweathermap.org/geo/1.0/direct?q={cityName}&limit=1" + "&appid=" + openWeatherApiUrl,
+				"http://api.openweathermap.org/geo/1.0/direct?q={cityName}&limit=1" + "&appid=" + openWeatherApiToken,
 				City[].class, cityName);
 		City[] cities = responseEntity.getBody();
 
